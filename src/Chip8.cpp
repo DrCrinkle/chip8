@@ -13,7 +13,7 @@ Chip8::Chip8()
     I = 0;
     drawflag = false;
 
-    std::memset(display, false, sizeof(display)); // clear display
+    std::memset(display, false, DISPLAY_WIDTH * DISPLAY_HEIGHT * sizeof(bool)); // clear display
     std::memset(stack, 0, sizeof(stack)); // clear stack
     std::memset(vReg, 0, sizeof(vReg)); // clear registers
     std::memset(Mem, 0, sizeof(Mem)); // clear memory
@@ -177,11 +177,12 @@ void Chip8::Cycle() {
                 uint8_t pixel = Mem[I + yline];
                 for (int xline = 0; xline < 8; xline++) {
                     if ((pixel & (0x80 >> xline)) != 0) {
-                        int x_coord = (vReg[x] + xline) % 64;
-                        int y_coord = (vReg[y] + yline) % 32;
-                        if (display[x_coord][y_coord])
+                        int x_coord = (vReg[x] + xline) % DISPLAY_WIDTH;
+                        int y_coord = (vReg[y] + yline) % DISPLAY_HEIGHT;
+                        int index = y_coord * DISPLAY_WIDTH + x_coord;
+                        if (display[index])
                             vReg[0xF] = 1;
-                        display[x_coord][y_coord] ^= true;
+                        display[index] ^= true;
                     }
                 }
             }

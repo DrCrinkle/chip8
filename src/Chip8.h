@@ -6,6 +6,9 @@ class Chip8 {
 
 public:
     Chip8();
+    
+    static const int DISPLAY_WIDTH = 64;
+    static const int DISPLAY_HEIGHT = 32;
 
     void Cycle();
     bool loadRom(std::string filename);
@@ -15,7 +18,7 @@ public:
         if (sound_timer > 0) sound_timer--;
     }
 
-    bool display[64][32];
+    bool display[DISPLAY_WIDTH * DISPLAY_HEIGHT];
     bool drawflag;
 
 private:

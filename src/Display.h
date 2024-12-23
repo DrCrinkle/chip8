@@ -8,7 +8,10 @@ public:
     Display();
     ~Display();
 
-    void updateFrame(bool display[64][32]);
+    static const int DISPLAY_WIDTH = 64;
+    static const int DISPLAY_HEIGHT = 32;
+
+    void updateFrame(const bool* display);
 
 private:
     SDL_Window* window;
