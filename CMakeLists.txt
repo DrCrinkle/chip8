@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.22)
 project(chip8_emulator)
 
 # Find SDL2 package
