@@ -115,12 +115,15 @@ void Chip8::Cycle() {
                     break;
                 case 0x0001: // Set VX to VX OR VY
                     vReg[x] |= vReg[y];
+                    vReg[0xF] = 0;
                     break;
                 case 0x0002: // Set VX to VX AND VY
                     vReg[x] &= vReg[y];
+                    vReg[0xF] = 0;
                     break;
                 case 0x0003: // Set VX to VX XOR VY
                     vReg[x] ^= vReg[y];
+                    vReg[0xF] = 0;
                     break;
                 case 0x0004: { // Add VY to VX with carry
                     uint16_t sum = vReg[x] + vReg[y];
@@ -134,6 +137,7 @@ void Chip8::Cycle() {
                     break;
                 }
                 case 0x0006: { // Shift VX right, VF = LSB
+                    vReg[x] = vReg[y];
                     vReg[0xF] = vReg[x] & 0x1;
                     vReg[x] >>= 1;
                     break;
@@ -144,6 +148,7 @@ void Chip8::Cycle() {
                     break;
                 }
                 case 0x000E: { // Shift VX left, VF = MSB
+                    vReg[x] = vReg[y];
                     vReg[0xF] = (vReg[x] & 0x80) >> 7;
                     vReg[x] <<= 1;
                     break;
@@ -169,19 +174,27 @@ void Chip8::Cycle() {
             break;
         case 0xD000: { // Draw sprite
             vReg[0xF] = 0;
+            uint8_t x_coord = vReg[x] & (DISPLAY_WIDTH - 1);  // Wrap x coordinate
+            uint8_t y_coord = vReg[y] & (DISPLAY_HEIGHT - 1); // Wrap y coordinate
+            
             for (int yline = 0; yline < n; yline++) {
                 if (I + yline >= 4096) {
                     std::cerr << "Memory access out of bounds at PC: 0x" << std::hex << old_pc << std::endl;
                     exit(1);
                 }
+                // Skip if yline would be off bottom of screen
+                if (y_coord + yline >= DISPLAY_HEIGHT) continue;
+                
                 uint8_t pixel = Mem[I + yline];
                 for (int xline = 0; xline < 8; xline++) {
+                    // Skip if xline would be off right of screen
+                    if (x_coord + xline >= DISPLAY_WIDTH) continue;
+                    
                     if ((pixel & (0x80 >> xline)) != 0) {
-                        int x_coord = (vReg[x] + xline) % DISPLAY_WIDTH;
-                        int y_coord = (vReg[y] + yline) % DISPLAY_HEIGHT;
-                        int index = y_coord * DISPLAY_WIDTH + x_coord;
-                        if (display[index])
+                        int index = (y_coord + yline) * DISPLAY_WIDTH + (x_coord + xline);
+                        if (display[index]) {
                             vReg[0xF] = 1;
+                        }
                         display[index] ^= true;
                     }
                 }
@@ -249,16 +262,20 @@ void Chip8::Cycle() {
                         std::cerr << "Memory access out of bounds at PC: 0x" << std::hex << old_pc << std::endl;
                         exit(1);
                     }
-                    for (int i = 0; i <= x; i++)
-                        Mem[I + i] = vReg[i];
+                    for (int i = 0; i <= x; i++) {
+                        Mem[I] = vReg[i];
+                        I++;
+                    }
                     break;
                 case 0x0065: // Load V0 to VX from memory
                     if (I + x >= 4096) {
                         std::cerr << "Memory access out of bounds at PC: 0x" << std::hex << old_pc << std::endl;
                         exit(1);
                     }
-                    for (int i = 0; i <= x; i++)
-                        vReg[i] = Mem[I + i];
+                    for (int i = 0; i <= x; i++) {
+                        vReg[i] = Mem[I];
+                        I++;
+                    }
                     break;
                 default:
                     std::cerr << "Unknown opcode 0x" << std::hex << opcode << " at PC: 0x" << old_pc << std::endl;
